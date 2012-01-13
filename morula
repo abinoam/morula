@@ -3,12 +3,11 @@
 # encoding: utf-8
 
 # ----------------------------------------------------------------
-# Date: 20 Nov 2011
+# Date: 13 Jan 2012
 # Description: Script that saves tweets into an SQLite3 database
 # Version: 0.1-alpha
-# Author: Panagiotis Atmatzidis - http://www.convalesco.org
-#
-# NOTE: This script is created/tested using ruby-1.9
+# Author: Panagiotis Atmatzidis - http://about.me/atmosx
+# License: MIT
 # ----------------------------------------------------------------
 
 # required gems
