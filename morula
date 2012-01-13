@@ -1,0 +1,235 @@
+#!/usr/bin/env ruby
+
+# encoding: utf-8
+
+# ----------------------------------------------------------------
+# Date: 20 Nov 2011
+# Description: Script that saves tweets into an SQLite3 database
+# Version: 0.1-alpha
+# Author: Panagiotis Atmatzidis - http://www.convalesco.org
+#
+# NOTE: This script is created/tested using ruby-1.9
+# ----------------------------------------------------------------
+
+# required gems
+require 'twitter'               
+require 'sqlite3'
+require 'benchmark'
+require 'date'
+require 'optparse'
+
+$version = '0.1-alpha'
+
+class Morula
+  attr_accessor :database, :tableid
+  def initialize(database, tableid)
+    @database = database
+    @tableid = tableid 
+  end                     
+  
+  def date_time(time)
+        current = DateTime.parse(time.to_s)
+        current.to_time
+  end     
+
+  # Doing a check before dumping everything to the database
+  def update(username)
+      location = Twitter.user("#{username}").location
+      db = SQLite3::Database.open(@database)
+      count_tweets = 0
+      saved_tweets = Array.new
+      already_saved = 0
+      retries = 0
+      db.execute("SELECT content_id FROM #{@tableid}").each {|x| saved_tweets << x.join}
+      b = Benchmark.realtime do
+      begin
+        (1..10).each do |page|
+            Twitter.user_timeline(username, :page => page, :count => 50).each do |tweet|
+               if saved_tweets.include?(tweet.id.to_s)
+                 already_saved += 1
+               else
+                 time = date_time(tweet.created_at).to_time.to_s
+                 db.execute("INSERT INTO  #{@tableid} ( username, pdate, content, content_id, location) VALUES(?,?,?,?,?)", username, time, tweet.text, tweet.id, location)
+                 #printf('*')
+                 page = 0
+                 puts "page " + (page + 1)
+                 count_tweets += 1
+               end
+            end
+          end
+       rescue 
+         retries += 1 
+         if retries > 3
+           puts "\nThere was a connection problem. Please try later."
+         else
+           puts "\nFailed #{retries} time(s) to fetch data... Retrying...\n"
+           retry
+         end
+       end
+      end
+      db.close
+      if count_tweets > 0
+        printf("\n%i tweets saved to database in %.2f seconds\n", count_tweets, b)
+      elsif already_saved > 0
+        puts "#{already_saved} tweets are already saved in your database"
+      printf("Time elapsed during check out: %.2f seconds\n", b)
+      end
+  end
+    
+  def create_table
+    if (File.exists?(@database))
+      db = SQLite3::Database.new(@database)
+      begin
+         # |key|username|date|content|content_id|
+         db.execute %Q{ CREATE TABLE #{@tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100)) }
+         puts "Table '#{@tableid}' has been created on database: #{@database}"
+      rescue Exception => e                    
+        puts "Table for user '#{@tableid}' exists in database!"
+      end                                    
+      db.close      
+    else      
+      puts "The database does not exist!"                                                             
+    end
+  end
+  
+  def create_db
+    if File.exists?(@database)
+      puts "#{@database} already exists!"
+    else
+      db = SQLite3::Database.new(@database)
+      db.close
+      create_table
+    end
+  end 
+  
+  def date_time(time)
+        current = DateTime.parse(time.to_s)
+        current.to_time
+  end     
+
+    # Statistics from db
+    def stats(cmd)
+      db = SQLite3::Database.open(@database)
+      case cmd
+      when 'all'
+        puts db.execute("SELECT * FROM #{@tableid};")
+      when 'list_tables'
+         return db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+      when 'list_dates'
+        puts db.execute("SELECT #{pdate} from #{@tableid};")
+      when 'list_ids'
+        puts db.execute("SELECT #{content_id} from #{@tableid};")
+      when 'list_text'
+        puts db.execute("SELECT #{content} from #{@tableid};")
+      when 'drop_table'
+        db.execute("DROP TABLE #{@tableid};")
+      when 'count'
+        count = 0
+        db.execute("select * from #{@tableid}").each {|entry| count +=1}
+        return count
+      when 'exit'
+        exit
+      end 
+      db.close
+    end
+end
+
+def dbase(x)
+  if x == nil
+    home = ENV['HOME']
+    database = home + '/' + '.morula.db'
+    return database
+  else
+    database = x
+    return database
+  end
+end
+
+options = {}                         
+
+optparse = OptionParser.new do |opts|
+  
+  opts.banner = "morula #{$version} (C) 2011\n\nUsage: morula -t twitter -u atmat [options: install, create, stats, update, list, delete]"
+  
+  opts.on('-d FILE', '--database', 'Use specific database file, default is ~/.morula.db') do |x|
+    options[:database] = x
+  end
+  
+  opts.on('-t TABLEID', '--tableid', 'The user table id which will be used to store all his data in the database') do |x|
+    options[:tableid] = x
+  end               
+  
+  opts.on('-u USER', '--userid', 'Userid for the specific protocol [only twitter supported]') do |x|
+    options[:userid] = x
+  end
+  
+  opts.on('-s USER/TABLE', '--sameid', 'Use the same tableid and userid. Useful when we want to use aliases as tables in our database') do |x|
+    options[:userid] = x
+    options[:tableid] = x
+  end
+  
+  opts.on('-h', '--help', 'Display help menu') do
+    puts opts
+    exit
+  end
+end
+
+optparse.parse!      
+
+puts "morula #{$version} (c) 2011\nType 'morula -h' for help" if ARGV[0] == nil
+
+if ARGV[0] != nil
+  if ARGV[0] == 'list'
+    db = dbase(options[:database])
+    tid = 'test'
+    morula = Morula.new(db, tid)
+    puts "\n"
+    msg = "List of tables available on #{db}"
+    puts msg
+    puts "-" * msg.length
+    puts morula.stats('list_tables')
+    puts "\n"
+  elsif options[:tableid] == nil
+    puts "You must use a table id. See help."; exit
+  else
+    tid = options[:tableid].to_s
+    case ARGV[0]
+    when 'install'
+      db = dbase(options[:database])
+      puts "database file: #{db}"
+      puts "userid: #{tid}"
+      morula = Morula.new(db, tid)
+      morula.create_db
+    when 'create'
+       db = dbase(options[:database])
+       morula = Morula.new(db, tid)
+       morula.create_table
+    when 'update'
+      db = dbase(options[:database])
+      morula = Morula.new(db, tid)
+      if options[:userid] == nil
+        puts "You must choose a userid for the specific protocol. In case of twitter you specify the user id!"
+      else
+        usr = options[:userid].to_s
+        morula.update(usr)
+      end
+    when 'stats'                    
+      db = dbase(options[:database])
+      morula = Morula.new(db, tid)
+      if options[:tableid] == nil
+        puts "You must choose a tableid id."
+      else
+        puts "\nDatabase: #{db}\nTable: #{tid}\nEntries: #{morula.stats('count')}"
+        puts "\n"
+      end 
+    when 'delete'
+      db = dbase(options[:database])
+      morula = Morula.new(db, tid)
+      morula.stats('drop_table')
+      puts "Table #{tid} has been deleted"
+      # here ends the 'when'
+    else
+      puts "Unknown options. Please read the manual."
+    end
+  end
+end
