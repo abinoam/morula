@@ -41,30 +41,28 @@ class Morula
       retries = 0
       db.execute("SELECT content_id FROM #{@tableid}").each {|x| saved_tweets << x.join}
       b = Benchmark.realtime do
-      begin
+      #begin
         (1..10).each do |page|
             Twitter.user_timeline(username, :page => page, :count => 50).each do |tweet|
                if saved_tweets.include?(tweet.id.to_s)
                  already_saved += 1
                else
                  time = date_time(tweet.created_at).to_time.to_s
-                 db.execute("INSERT INTO  #{@tableid} ( username, pdate, content, content_id, location) VALUES(?,?,?,?,?)", username, time, tweet.text, tweet.id, location)
-                 #printf('*')
-                 page = 0
-                 puts "page " + (page + 1)
+                 db.execute("INSERT INTO  #{@tableid} (username, pdate, content, content_id, location) VALUES(?,?,?,?,?)", username, time, tweet.text, tweet.id, location)
+                 printf('*')
                  count_tweets += 1
                end
             end
           end
-       rescue 
-         retries += 1 
-         if retries > 3
-           puts "\nThere was a connection problem. Please try later."
-         else
-           puts "\nFailed #{retries} time(s) to fetch data... Retrying...\n"
-           retry
-         end
-       end
+       # rescue 
+       #          retries += 1 
+       #          if retries > 3
+       #            puts "\nThere was a connection problem. Please try later."
+       #          else
+       #            puts "\nFailed #{retries} time(s) to fetch data... Retrying...\n"
+       #            retry
+       #          end
+       #        end
       end
       db.close
       if count_tweets > 0
@@ -79,11 +77,12 @@ class Morula
     if (File.exists?(@database))
       db = SQLite3::Database.new(@database)
       begin
-         # |key|username|date|content|content_id|
-         db.execute %Q{ CREATE TABLE #{@tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100)) }
+         # |key|username|date|content|content_id|location
+         db.execute %Q{ CREATE TABLE #{@tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100), location varchar(100)) }
          puts "Table '#{@tableid}' has been created on database: #{@database}"
       rescue Exception => e                    
-        puts "Table for user '#{@tableid}' exists in database!"
+        puts e.to_s
+        #puts "Table for user '#{@tableid}' exists in database!"
       end                                    
       db.close      
     else      
