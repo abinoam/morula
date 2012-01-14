@@ -41,7 +41,7 @@ class Morula
       retries = 0
       db.execute("SELECT content_id FROM #{@tableid}").each {|x| saved_tweets << x.join}
       b = Benchmark.realtime do
-      #begin
+      begin
         (1..10).each do |page|
             Twitter.user_timeline(username, :page => page, :count => 50).each do |tweet|
                if saved_tweets.include?(tweet.id.to_s)
@@ -54,15 +54,15 @@ class Morula
                end
             end
           end
-       # rescue 
-       #          retries += 1 
-       #          if retries > 3
-       #            puts "\nThere was a connection problem. Please try later."
-       #          else
-       #            puts "\nFailed #{retries} time(s) to fetch data... Retrying...\n"
-       #            retry
-       #          end
-       #        end
+      rescue 
+          retries += 1 
+          if retries > 3
+             puts "\nThere was a connection problem. Please try later."
+          else
+             puts "\nFailed #{retries} time(s) to fetch data... Retrying...\n"
+             retry
+          end
+        end
       end
       db.close
       if count_tweets > 0
@@ -227,7 +227,7 @@ if ARGV[0] != nil
       puts "Table #{tid} has been deleted"
       # here ends the 'when'
     else
-      puts "Unknown options. Please read the manual."
+      puts "Unknown option(s). Type morula -h for help."
     end
   end
 end
