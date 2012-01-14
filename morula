@@ -80,9 +80,8 @@ class Morula
          # |key|username|date|content|content_id|location
          db.execute %Q{ CREATE TABLE #{@tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100), location varchar(100)) }
          puts "Table '#{@tableid}' has been created on database: #{@database}"
-      rescue Exception => e                    
-        puts e.to_s
-        #puts "Table for user '#{@tableid}' exists in database!"
+      rescue                     
+        puts "Table for user '#{@tableid}' exists in database!"
       end                                    
       db.close      
     else      
@@ -181,8 +180,6 @@ if ARGV[0] != nil
     db = dbase(options[:database])
     tid = 'test'
     morula = Morula.new(db, tid)
-    puts "\n"
-    msg = "List of tables available on #{db}"
     puts msg
     puts "-" * msg.length
     puts morula.stats('list_tables')
@@ -217,15 +214,19 @@ if ARGV[0] != nil
       if options[:tableid] == nil
         puts "You must choose a tableid id."
       else
-        puts "\nDatabase: #{db}\nTable: #{tid}\nEntries: #{morula.stats('count')}"
-        puts "\n"
+        begin
+          puts "\nDatabase: #{db}\nTable: #{tid}\nEntries: #{morula.stats('count')}"
+          puts "\n"
+        rescue # the error here is: SQLite3::SQLException I should make an Exception => e handling
+            puts "There is not such tableid. Please type 'morula list' to view tables stored."
+        end
       end 
     when 'delete'
       db = dbase(options[:database])
       morula = Morula.new(db, tid)
       morula.stats('drop_table')
       puts "Table #{tid} has been deleted"
-      # here ends the 'when'
+      # here ends the 'when' clause
     else
       puts "Unknown option(s). Type morula -h for help."
     end
