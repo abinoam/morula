@@ -180,6 +180,7 @@ if ARGV[0] != nil
     db = dbase(options[:database])
     tid = 'test'
     morula = Morula.new(db, tid)
+    msg "Tables listed in #{db}"
     puts msg
     puts "-" * msg.length
     puts morula.stats('list_tables')
