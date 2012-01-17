@@ -111,7 +111,9 @@ class Morula
       when 'all'
         puts db.execute("SELECT * FROM #{@tableid};")
       when 'list_tables'
-         return db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+          a = []
+          puts db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+          #puts a
       when 'list_dates'
         puts db.execute("SELECT #{pdate} from #{@tableid};")
       when 'list_ids'
@@ -180,6 +182,7 @@ if ARGV[0] != nil
     db = dbase(options[:database])
     tid = 'test'
     morula = Morula.new(db, tid)
+    msg = "Tables listed in #{db}"
     puts msg
     puts "-" * msg.length
     puts morula.stats('list_tables')
