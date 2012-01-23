@@ -17,7 +17,7 @@ require 'benchmark'
 require 'date'
 require 'optparse'
 
-$version = '0.1-alpha'
+$version = '0.1-beta'
 
 class Morula
   attr_accessor :database, :tableid
@@ -104,7 +104,7 @@ class Morula
         current.to_time
   end
   
-  def file_size(file)
+  def file_size(file) # I need to add floating point till 2nd decimal here
     x = File.size(file)
     kb = 1024
     mb = (1024 ** 2)
@@ -122,6 +122,7 @@ class Morula
   end
 
   def print_tstats
+    # pretify this a bit
       db = SQLite3::Database.open(@database)
       tlist = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;").flatten
       entries = 0
@@ -130,12 +131,12 @@ class Morula
       puts "DB Location: #{@database}"
       puts "Tables in DB: #{tlist.length}"
       puts "DB Size: #{file_size(@database)}"
-      tlist.each do |x|
+      tlist.each do |table|
           count = 0
-          db.execute("select * from #{x}").each {|entry| count +=1}
-          dlist = db.execute("select pdate from #{x} order by rowid desc limit 1;").flatten
-          date = dlist.map{|x| %Q('#{x}')}.join()
-          puts "Table: #{x}\tEntries: #{count}\tLast Tweet: #{date}"
+          db.execute("select * from #{table}").each {|entry| count +=1}
+          dlist = db.execute("select pdate from #{table} order by rowid desc limit 1;").flatten
+          date = dlist.map{|x| %Q('#{table}')}.join() #turning the flatten array into string
+          printf "Table: %-20s Entries: %-10s Last Upadte: %-20s\n", table, count, date
           entries += count
       end
       puts "-------------"
@@ -143,28 +144,9 @@ class Morula
   end
 
     # Statistics from db
-  def stats(cmd)
+  def drop_table
       db = SQLite3::Database.open(@database)
-      case cmd
-      when 'all'
-        puts db.execute("SELECT * FROM #{@tableid};")
-      when 'list_tables'
-          return db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
-      when 'list_dates'
-        puts db.execute("SELECT #{pdate} from #{@tableid};")
-      when 'list_ids'
-        puts db.execute("SELECT #{content_id} from #{@tableid};")
-      when 'list_text'
-        puts db.execute("SELECT #{content} from #{@tableid};")
-      when 'drop_table'
-        db.execute("DROP TABLE #{@tableid};")
-      when 'count'
-        count = 0
-        db.execute("select * from #{@tableid}").each {|entry| count +=1}
-        return count
-      when 'exit'
-        exit
-      end 
+      db.execute("DROP TABLE #{@tableid};")
       db.close
   end
 end
@@ -184,7 +166,7 @@ options = {}
 
 optparse = OptionParser.new do |opts|
   
-  opts.banner = "morula #{$version} (C) 2011\n\nUsage: morula -t twitter -u dens [options: install, create, stats, update, list, delete]"
+  opts.banner = "morula #{$version} (C) 2011\n\nUsage: morula -t twitter -u dens [options: install, create, update, delete]"
   
   opts.on('-d FILE', '--database', 'Use specific database file, default is ~/.morula.db') do |x|
     options[:database] = x
@@ -214,22 +196,10 @@ optparse.parse!
 puts "morula #{$version} (c) 2011\nType 'morula -h' for help" if ARGV[0] == nil
 
 if ARGV[0] != nil
-  if ARGV[0] == 'list'
+  if ARGV[0] == 'info'
     db = dbase(options[:database])
     tid = 'test'
     morula = Morula.new(db, tid)
-    msg = "Tables listed in #{db}"
-    puts msg
-    puts "-" * msg.length
-    puts morula.stats('list_tables')
-    puts "\n"
-  elsif ARGV[0] == 'test'
-    db = dbase(options[:database])
-    tid = 'test'
-    morula = Morula.new(db, tid)
-    # msg = "List tables w/ stats in #{db}"
-    #     puts msg
-    #     puts '-' * msg.length
     morula.print_tstats
   elsif options[:tableid] == nil
     puts "You must use a table id. See help."; exit
@@ -255,25 +225,11 @@ if ARGV[0] != nil
         usr = options[:userid].to_s
         morula.update(usr)
       end
-    when 'stats'                    
-      db = dbase(options[:database])
-      morula = Morula.new(db, tid)
-      if options[:tableid] == nil
-        puts "You must choose a tableid id."
-      else
-        begin
-          puts "\nDatabase: #{db}\nTable: #{tid}\nEntries: #{morula.stats('count')}"
-          puts "\n"
-        rescue # the error here is: SQLite3::SQLException I should make an Exception => e handling
-            puts "There is not such tableid. Please type 'morula list' to view tables stored."
-        end
-      end 
     when 'delete'
       db = dbase(options[:database])
       morula = Morula.new(db, tid)
-      morula.stats('drop_table')
+      morula.drop_table
       puts "Table #{tid} has been deleted"
-      # here ends the 'when' clause
     else
       puts "Unknown option(s). Type morula -h for help."
     end
