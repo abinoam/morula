@@ -200,15 +200,7 @@ if ARGV[0] != nil
     db = dbase(options[:database])
     tid = 'test'
     morula = Morula.new(db, tid)
-<<<<<<< HEAD
-    msg = "Tables listed in #{db}"
-    puts msg
-    puts "-" * msg.length
-    puts morula.stats('list_tables')
-    puts "\n"
-=======
     morula.print_tstats
->>>>>>> dev
   elsif options[:tableid] == nil
     puts "You must use a table id. See help."; exit
   else
