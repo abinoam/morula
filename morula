@@ -3,7 +3,7 @@
 # encoding: utf-8
 
 # ----------------------------------------------------------------
-# Date: 13 Jan 2012
+# Date: 23 Jan 2012 - version 0.1-beta
 # Description: Script that saves tweets into an SQLite3 database
 # Author: Panagiotis Atmatzidis - http://about.me/atmosx
 # Github: https://github.com/atmosx/morula
@@ -105,19 +105,21 @@ class Morula
   end
   
   def file_size(file) # I need to add floating point till 2nd decimal here
-    x = File.size(file)
+    x = File.size(file).to_f
     kb = 1024
     mb = (1024 ** 2)
     gb = (1024 ** 3)
     tb = (1024 ** 4)
     if x < 1024
-      return "#{x} Bytes"
+       return "#{x} Bytes"
     elsif x > 1024 && x < mb
-      return "#{x/kb} KB"
+       #return "#{x/kb} KB"
+       sprintf("%0.2f KB", (x/kb))
     elsif x > mb && x < gb
-      return "#{x/mb} MB"
+       #return "#{x/mb} MB"
+       sprintf("%0.2f MB", (x/mb))
     elsif x > gb
-      return "#{x/gb} GB"
+       return "#{x/gb} GB"
     end
   end
 
@@ -126,21 +128,22 @@ class Morula
       db = SQLite3::Database.open(@database)
       tlist = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;").flatten
       entries = 0
-      puts "Database Info"
-      puts "-------------"
-      puts "DB Location: #{@database}"
-      puts "Tables in DB: #{tlist.length}"
-      puts "DB Size: #{file_size(@database)}"
+      puts "morula #{$version} (C) 2012"
+      puts ""
+      msg = "Details for #{@database}"
+      puts msg
+      puts "-" * msg.length
       tlist.each do |table|
           count = 0
           db.execute("select * from #{table}").each {|entry| count +=1}
           dlist = db.execute("select pdate from #{table} order by rowid desc limit 1;").flatten
-          date = dlist.map{|x| %Q('#{table}')}.join() #turning the flatten array into string
-          printf "Table: %-20s Entries: %-10s Last Upadte: %-20s\n", table, count, date
+          date = dlist.map{|table| %Q('#{table}')}.join() #turning the flatten array into string
+          printf "Table: %-20s Entries: %-10s Last Update: %-20s\n", table, count, date
           entries += count
       end
-      puts "-------------"
-      puts "Total entries: #{entries}"
+      puts "-" * msg.length
+      puts "The database has #{tlist.length} tables, #{file_size(@database)} size featuring #{entries} total entries."
+      puts ""
   end
 
     # Statistics from db
@@ -166,7 +169,7 @@ options = {}
 
 optparse = OptionParser.new do |opts|
   
-  opts.banner = "morula #{$version} (C) 2011\n\nUsage: morula -t twitter -u dens [options: install, create, update, delete, info]"
+  opts.banner = "morula #{$version} (C) 2012\n\nUsage: morula -t twitter -u dens [options: install, create, update, delete]\nExample: morula info"
   
   opts.on('-d FILE', '--database', 'Use specific database file, default is ~/.morula.db') do |x|
     options[:database] = x
