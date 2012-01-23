@@ -102,18 +102,48 @@ class Morula
   def date_time(time)
         current = DateTime.parse(time.to_s)
         current.to_time
-  end     
+  end
+  
+  def file_size(file)
+    x = File.size(file)
+    kb = 1024
+    mb = (1024 ** 2)
+    gb = (1024 ** 3)
+    tb = (1024 ** 4)
+    if x < 1024
+      return "#{x} Bytes"
+    elsif x > 1024 && x < mb
+      return "#{x/kb} KB"
+    elsif x > mb && x < gb
+      return "#{x/mb} MB"
+    elsif x > gb
+      return "#{x/gb} GB"
+    end
+  end
+
+  def print_tstats
+      db = SQLite3::Database.open(@database)
+      tlist = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;").flatten
+      
+      puts "Database: #{@database}"
+      puts "Size: #{file_size(@database)}"
+      
+      tlist.each do |x|
+          count = 0
+          db.execute("select * from #{x}").each {|entry| count +=1}
+          puts "Table: #{x}\tEntries: #{count}"
+      end
+      #puts tlist
+  end
 
     # Statistics from db
-    def stats(cmd)
+  def stats(cmd)
       db = SQLite3::Database.open(@database)
       case cmd
       when 'all'
         puts db.execute("SELECT * FROM #{@tableid};")
       when 'list_tables'
-          a = []
-          puts db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
-          #puts a
+          return db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
       when 'list_dates'
         puts db.execute("SELECT #{pdate} from #{@tableid};")
       when 'list_ids'
@@ -130,7 +160,7 @@ class Morula
         exit
       end 
       db.close
-    end
+  end
 end
 
 def dbase(x)
@@ -187,6 +217,14 @@ if ARGV[0] != nil
     puts "-" * msg.length
     puts morula.stats('list_tables')
     puts "\n"
+  elsif ARGV[0] == 'test'
+    db = dbase(options[:database])
+    tid = 'test'
+    morula = Morula.new(db, tid)
+    # msg = "List tables w/ stats in #{db}"
+    #     puts msg
+    #     puts '-' * msg.length
+    morula.print_tstats
   elsif options[:tableid] == nil
     puts "You must use a table id. See help."; exit
   else
