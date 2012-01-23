@@ -166,7 +166,7 @@ options = {}
 
 optparse = OptionParser.new do |opts|
   
-  opts.banner = "morula #{$version} (C) 2011\n\nUsage: morula -t twitter -u dens [options: install, create, update, delete]"
+  opts.banner = "morula #{$version} (C) 2011\n\nUsage: morula -t twitter -u dens [options: install, create, update, delete, info]"
   
   opts.on('-d FILE', '--database', 'Use specific database file, default is ~/.morula.db') do |x|
     options[:database] = x
