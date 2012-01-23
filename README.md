@@ -1,5 +1,5 @@
 # Morula
-Morula is a simple [ruby][] script which dumps tweets made by a user into an [SQLite3][] database. It's mostly meant to act like a twitter account backup option, since twitter only holds your last 2600 tweets. Once you have your data on an [SQLite3][] database, you can work on it easily.
+Morula is a [ruby][] script that dumps tweets into an [SQLite3][] database. It's meant to act like a twitter backup option since twitter only holds your last 2600 tweets. It can be used to gather data for analysis.
 
 ## Installation 
 In order to install this script you need the following gems:
@@ -31,8 +31,12 @@ Now you can dump tweets into your database by the following command:
 Or more simply, if you have used the defualt values:
 	
 	greyjewel:~ atma$ morula -s dens update
-
-That's most of it. There are a couple of commands like **list** and **stats** from which you can retrieve some basic info but the idea is to have your data into an SQLite3 database for further usage with other programs.
+	
+You can see database details by using 'info' comand:
+	
+	greyjewel:~ atma$ morula info
+	
+That's all, simple & straight forward. Morula does not support auth yet. Support for other protocols - *except twitter* - is something I'm also considering for a future version.
 
 [SQLite3]: http://www.sqlite.org/
 [ruby]: http://www.ruby-lang.org/en/
