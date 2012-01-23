@@ -124,16 +124,22 @@ class Morula
   def print_tstats
       db = SQLite3::Database.open(@database)
       tlist = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;").flatten
-      
-      puts "Database: #{@database}"
-      puts "Size: #{file_size(@database)}"
-      
+      entries = 0
+      puts "Database Info"
+      puts "-------------"
+      puts "DB Location: #{@database}"
+      puts "Tables in DB: #{tlist.length}"
+      puts "DB Size: #{file_size(@database)}"
       tlist.each do |x|
           count = 0
           db.execute("select * from #{x}").each {|entry| count +=1}
-          puts "Table: #{x}\tEntries: #{count}"
+          dlist = db.execute("select pdate from #{x} order by rowid desc limit 1;").flatten
+          date = dlist.map{|x| %Q('#{x}')}.join()
+          puts "Table: #{x}\tEntries: #{count}\tLast Tweet: #{date}"
+          entries += count
       end
-      #puts tlist
+      puts "-------------"
+      puts "Total entries: #{entries}"
   end
 
     # Statistics from db
