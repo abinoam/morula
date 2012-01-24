@@ -33,7 +33,8 @@ class Morula
 
   # Doing a check before dumping everything to the database
   def update(username, tableid)
-      tlist = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;").flatten
+    db = SQLite3::Database.new(@database)
+    tlist = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;").flatten
     if tlist.include?(tableid)
       location = Twitter.user(username.to_s).location
       db = SQLite3::Database.open(@database)
@@ -42,6 +43,8 @@ class Morula
       already_saved = 0
       retries = 0
       db.execute("SELECT content_id FROM #{tableid}").each {|x| saved_tweets << x.join}
+      puts $banner
+      puts "Please wait, updating database..."
       b = Benchmark.realtime do
       begin
         (1..10).each do |page|
@@ -74,7 +77,10 @@ class Morula
       printf("Time elapsed during check out: %.2f seconds\n", b)
       end
     else
-      puts "I'm sorry #{tableid} does not exist in #{@database}"
+      puts $banner
+      puts "Table #{tableid} does not exists in database: #{@database}"
+      puts "You might want to create it by typing: 'morula -t #{tableid} -d #{@database} create'"
+      puts ""
     end
   end
     
