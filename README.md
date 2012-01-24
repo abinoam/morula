@@ -40,7 +40,7 @@ You can see database details by using 'info' comand:
 	
 	greyjewel:~ atma$ morula info
 	
-That's all. Simple and straight forward. Morula does not support auth yet. Support for other protocols might be added in the future to make data gathering procedure for further analysis more accurate.
+That's all. Simple and straight forward. **Morula does not support auth**. Support for other protocols might be added in the future to make morula a more complete data gathering tool.
 
 [SQLite3]: http://www.sqlite.org/
 [ruby]: http://www.ruby-lang.org/en/
