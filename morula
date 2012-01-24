@@ -79,7 +79,7 @@ class Morula
     else
       puts $banner
       puts "Table #{tableid} does not exists in database: #{@database}"
-      puts "You might want to create it by typing: 'morula -t #{tableid} -d #{@database} create'"
+      puts "You might want to create it by typing: 'morula -t <tableid> -d #{@database} create'"
       puts ""
     end
   end
