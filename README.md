@@ -11,16 +11,15 @@ Clone and place morula on **/usr/loca/bin**. Then make it executable like: **chm
 
 ## Usage
 First we need to *install* a database, then crate the table(s), which usually is named after user's twitter username and then update. Example:
-
-  greyjewel:morula atma$ rm /Users/atma/.morula.db 
-  greyjewel:morula atma$ ./morula install
-  morula 0.1-beta (C) 2012
-  The SQLite3 database /Users/atma/.morula.db has been created
-  Now type 'morula -s <username> create' to create a table for a chosen user
-  greyjewel:morula atma$ ./morula -s dens create
-  Table 'dens' has been created on database: /Users/atma/.morula.db
-  greyjewel:morula atma$ ./morula -s dens update
-
+	
+	greyjewel:morula atma$ rm /Users/atma/.morula.db
+    greyjewel:morula atma$ ./morula install
+    morula 0.1-beta (C) 2012
+    The SQLite3 database /Users/atma/.morula.db has been created
+    Now type 'morula -s <username> create' to create a table for a chosen user
+    greyjewel:morula atma$ ./morula -s dens create
+    Table 'dens' has been created on database: /Users/atma/.morula.db
+    greyjewel:morula atma$ ./morula -s dens update
 
 You can choose a different database location, a different username and/or table name. Example:
 	
