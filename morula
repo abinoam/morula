@@ -18,6 +18,7 @@ require 'date'
 require 'optparse'
 
 $version = '0.1-beta'
+$banner = "morula #{$version} (C) 2012"
 
 class Morula
   attr_accessor :database
@@ -32,6 +33,8 @@ class Morula
 
   # Doing a check before dumping everything to the database
   def update(username, tableid)
+      tlist = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;").flatten
+    if tlist.include?(tableid)
       location = Twitter.user(username.to_s).location
       db = SQLite3::Database.open(@database)
       count_tweets = 0
@@ -70,10 +73,13 @@ class Morula
         puts "#{already_saved} tweets are already saved in your database"
       printf("Time elapsed during check out: %.2f seconds\n", b)
       end
+    else
+      puts "I'm sorry #{tableid} does not exist in #{@database}"
+    end
   end
     
   def create_table(tableid)
-    if File.exists?(@database)
+    if @database and File.exists?(@database)
       db = SQLite3::Database.new(@database)
       begin
          # |key|username|date|content|content_id|location
@@ -89,11 +95,21 @@ class Morula
   end
   
   def create_db
-     if File.exists?(@database)
+     if @database and File.exists?(@database)
        puts "#{@database} already exists!"
      else
-       db = SQLite3::Database.new(@database)
-       db.close
+       begin
+         db = SQLite3::Database.new(@database)
+         db.close
+         puts ""
+         puts $banner
+         puts "The SQLite3 database #{database} has been created"
+         puts "Now type 'morula -s <username> create' to create a table for a chosen user"
+         puts ""
+       rescue Exception => e
+         puts e.to_s
+         #puts e.backtrace
+       end
      end
   end 
   
@@ -152,17 +168,6 @@ class Morula
   end
 end
 
-def dbase(x)
-  if x == nil
-    home = ENV['HOME']
-    database = home + '/' + '.morula.db'
-    return database
-  else
-    database = x
-    return database
-  end
-end
-
 options = {}                         
 
 optparse = OptionParser.new do |opts|
@@ -192,44 +197,36 @@ optparse = OptionParser.new do |opts|
   end
 end
 
-optparse.parse!      
+optparse.parse! 
 
 puts "morula #{$version} (c) 2011\nType 'morula -h' for help" if ARGV[0] == nil
 
 if ARGV[0] != nil
+  # DB: use default location is not given
+  dbase = ENV['HOME'] + '/' + '.morula.db'  
+  db = options[:database]
+  db = dbase if options[:database] == nil
+  # execution starts here
+  morula = Morula.new(db)    
   if ARGV[0] == 'info'
-    db = dbase(options[:database])
-    morula = Morula.new(db)
     morula.print_tstats
-  elsif options[:tableid] == nil
-    puts "You must use a table id. See help."; exit
   else
-    tid = options[:tableid].to_s
+    # setting up values here
     uid = options[:userid].to_s
+    tid = options[:tableid].to_s
     case ARGV[0]
     when 'install'
-      db = dbase(options[:database])
-      puts "database file: #{db}"
-      #puts "userid: #{uid}"
-      #puts "tableid: #{tid}"
-      morula = Morula.new(db)
       morula.create_db
     when 'create'
-       db = dbase(options[:database])
-       morula = Morula.new(db)
        morula.create_table(tid)
     when 'update'
-      db = dbase(options[:database])
-      morula = Morula.new(db)
       if options[:userid] == nil
         puts "You must choose a userid for the specific protocol. In case of twitter you specify the user id!"
       else
         usr = options[:userid].to_s
-        morula.update(usr, tid)
+        morula.update(usr,tid)
       end
     when 'delete'
-      db = dbase(options[:database])
-      morula = Morula.new(db)
       morula.drop_table(tid)
       puts "Table #{tid} has been deleted"
     else

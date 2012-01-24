@@ -10,14 +10,14 @@ In order to install this script you need the following gems:
 Clone and place morula on **/usr/loca/bin**. Then make it executable like: **chmod +x /usr/local/bin/morula**.
 
 ## Usage
-First we need to create a database along with a table, which usually is named after user's twitter username. Example:
+First we need to *install* a database along with a table, which usually is named after user's twitter username. Example:
 
 	greyjewel:~ atma$ morula -s dens install
 	database file: /Users/atma/.morula.db
 	userid: dens
 	Table 'dens' has been created on database: /Users/atma/.morula.db
 
-You can choose a different database location, username and table name. Example:
+You can choose a different database location, a different username and/or table name. Example:
 	
 	greyjewel:~ atma$ morula -d /tmp/testdb -t table1 install
 	database file: /tmp/testdb
@@ -28,7 +28,7 @@ Now you can dump tweets into your database by the following command:
 	
 	greyjewel:~ atma$ morula -d /tmp/testdb -t table1 -u dens update
 	
-Or more simply, if you have used the defualt values:
+Or more simply, if you have used the default values and your tableid/username is the same:
 	
 	greyjewel:~ atma$ morula -s dens update
 	
@@ -36,7 +36,7 @@ You can see database details by using 'info' comand:
 	
 	greyjewel:~ atma$ morula info
 	
-That's all, simple & straight forward. Morula does not support auth yet. Support for other protocols - *except twitter* - is something I'm also considering for a future version.
+That's all. Simple and straight forward. Morula does not support auth yet. Support for other protocols might be added in the future to make data gathering procedure for further analysis more accurate.
 
 [SQLite3]: http://www.sqlite.org/
 [ruby]: http://www.ruby-lang.org/en/
