@@ -10,7 +10,7 @@ In order to install this script you need the following gems:
 Clone and place morula on **/usr/loca/bin**. Then make it executable like: **chmod +x /usr/local/bin/morula**.
 
 ## Usage
-First we need to *install* a database, then crate the table(s), which usually is named after user's twitter username and then update. Example:
+First we need to *install* the database, then create the table(s). Example:
 	
 	greyjewel:morula atma$ rm /Users/atma/.morula.db
     greyjewel:morula atma$ ./morula install
