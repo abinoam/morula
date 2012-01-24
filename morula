@@ -20,10 +20,9 @@ require 'optparse'
 $version = '0.1-beta'
 
 class Morula
-  attr_accessor :database, :tableid
-  def initialize(database, tableid)
+  attr_accessor :database
+  def initialize(database)
     @database = database
-    @tableid = tableid 
   end                     
   
   def date_time(time)
@@ -32,14 +31,14 @@ class Morula
   end     
 
   # Doing a check before dumping everything to the database
-  def update(username)
-      location = Twitter.user("#{username}").location
+  def update(username, tableid)
+      location = Twitter.user(username.to_s).location
       db = SQLite3::Database.open(@database)
       count_tweets = 0
       saved_tweets = Array.new
       already_saved = 0
       retries = 0
-      db.execute("SELECT content_id FROM #{@tableid}").each {|x| saved_tweets << x.join}
+      db.execute("SELECT content_id FROM #{tableid}").each {|x| saved_tweets << x.join}
       b = Benchmark.realtime do
       begin
         (1..10).each do |page|
@@ -48,7 +47,7 @@ class Morula
                  already_saved += 1
                else
                  time = date_time(tweet.created_at).to_time.to_s
-                 db.execute("INSERT INTO  #{@tableid} (username, pdate, content, content_id, location) VALUES(?,?,?,?,?)", username, time, tweet.text, tweet.id, location)
+                 db.execute("INSERT INTO  #{tableid} (username, pdate, content, content_id, location) VALUES(?,?,?,?,?)", username, time, tweet.text, tweet.id, location)
                  printf('*')
                  count_tweets += 1
                end
@@ -73,15 +72,15 @@ class Morula
       end
   end
     
-  def create_table
-    if (File.exists?(@database))
+  def create_table(tableid)
+    if File.exists?(@database)
       db = SQLite3::Database.new(@database)
       begin
          # |key|username|date|content|content_id|location
-         db.execute %Q{ CREATE TABLE #{@tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100), location varchar(100)) }
-         puts "Table '#{@tableid}' has been created on database: #{@database}"
+         db.execute %Q{ CREATE TABLE #{tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100), location varchar(100)) }
+         puts "Table '#{tableid}' has been created on database: #{@database}"
       rescue                     
-        puts "Table for user '#{@tableid}' exists in database!"
+        puts "Table for user '#{tableid}' exists in database!"
       end                                    
       db.close      
     else      
@@ -90,13 +89,12 @@ class Morula
   end
   
   def create_db
-    if File.exists?(@database)
-      puts "#{@database} already exists!"
-    else
-      db = SQLite3::Database.new(@database)
-      db.close
-      create_table
-    end
+     if File.exists?(@database)
+       puts "#{@database} already exists!"
+     else
+       db = SQLite3::Database.new(@database)
+       db.close
+     end
   end 
   
   def date_time(time)
@@ -147,9 +145,9 @@ class Morula
   end
 
     # Statistics from db
-  def drop_table
+  def drop_table(tableid)
       db = SQLite3::Database.open(@database)
-      db.execute("DROP TABLE #{@tableid};")
+      db.execute("DROP TABLE #{tableid};")
       db.close
   end
 end
@@ -201,37 +199,38 @@ puts "morula #{$version} (c) 2011\nType 'morula -h' for help" if ARGV[0] == nil
 if ARGV[0] != nil
   if ARGV[0] == 'info'
     db = dbase(options[:database])
-    tid = 'test'
-    morula = Morula.new(db, tid)
+    morula = Morula.new(db)
     morula.print_tstats
   elsif options[:tableid] == nil
     puts "You must use a table id. See help."; exit
   else
     tid = options[:tableid].to_s
+    uid = options[:userid].to_s
     case ARGV[0]
     when 'install'
       db = dbase(options[:database])
       puts "database file: #{db}"
-      puts "userid: #{tid}"
-      morula = Morula.new(db, tid)
+      #puts "userid: #{uid}"
+      #puts "tableid: #{tid}"
+      morula = Morula.new(db)
       morula.create_db
     when 'create'
        db = dbase(options[:database])
-       morula = Morula.new(db, tid)
-       morula.create_table
+       morula = Morula.new(db)
+       morula.create_table(tid)
     when 'update'
       db = dbase(options[:database])
-      morula = Morula.new(db, tid)
+      morula = Morula.new(db)
       if options[:userid] == nil
         puts "You must choose a userid for the specific protocol. In case of twitter you specify the user id!"
       else
         usr = options[:userid].to_s
-        morula.update(usr)
+        morula.update(usr, tid)
       end
     when 'delete'
       db = dbase(options[:database])
-      morula = Morula.new(db, tid)
-      morula.drop_table
+      morula = Morula.new(db)
+      morula.drop_table(tid)
       puts "Table #{tid} has been deleted"
     else
       puts "Unknown option(s). Type morula -h for help."
