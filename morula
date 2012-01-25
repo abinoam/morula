@@ -23,6 +23,7 @@ $banner = "morula #{$version} (C) 2012"
 class Morula
   attr_accessor :database
   def initialize(database)
+    raise ArgumentError, "Invalid Database" unless database and File.exist?(database)
     @database = database
   end                     
   
@@ -85,19 +86,15 @@ class Morula
   end
     
   def create_table(tableid)
-    if @database and File.exists?(@database)
-      db = SQLite3::Database.new(@database)
-      begin
-         # |key|username|date|content|content_id|location
-         db.execute %Q{ CREATE TABLE #{tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100), location varchar(100)) }
-         puts "Table '#{tableid}' has been created on database: #{@database}"
-      rescue                     
-        puts "Table for user '#{tableid}' exists in database!"
-      end                                    
-      db.close      
-    else      
-      puts "The database does not exist!"                                                             
-    end
+    db = SQLite3::Database.new(@database)
+    begin
+      # |key|username|date|content|content_id|location
+      db.execute %Q{ CREATE TABLE #{tableid} (id integer primary key, username varchar(10), pdate date, content varchar(14000), content_id integer(100), location varchar(100)) }
+      puts "Table '#{tableid}' has been created on database: #{@database}"
+    rescue                     
+      puts "Table for user '#{tableid}' exists in database!"
+    end                                    
+    db.close      
   end
   
   def create_db
